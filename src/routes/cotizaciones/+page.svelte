@@ -82,7 +82,14 @@
 					<tbody class="divide-y divide-gray-100">
 						{#each data.cotizaciones as cotizacion (cotizacion.id)}
 							<tr class="text-gray-900">
-								<td class="py-3 pr-4 font-medium">{cotizacion.numero}</td>
+								<td class="py-3 pr-4 font-medium">
+									<a
+										href="/cotizaciones/{cotizacion.id}"
+										class="text-gray-900 transition hover:text-gray-600"
+									>
+										{cotizacion.numero}
+									</a>
+								</td>
 								<td class="py-3 pr-4">{cotizacion.cliente?.nombre ?? '-'}</td>
 								<td class="py-3 pr-4">
 									<span
