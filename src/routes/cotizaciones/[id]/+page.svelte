@@ -91,6 +91,16 @@
 		};
 		return classes[tone] ?? 'bg-gray-900 hover:bg-gray-800';
 	}
+
+	function metodoLabel(metodo) {
+		const labels = {
+			TRANSFERENCIA: 'Transferencia',
+			EFECTIVO: 'Efectivo',
+			CHEQUE: 'Cheque',
+			TARJETA: 'Tarjeta'
+		};
+		return labels[metodo] ?? metodo;
+	}
 </script>
 
 <main class="mx-auto max-w-5xl p-6">
@@ -176,6 +186,153 @@
 				<span>{formatMoney(cotizacion.total)}</span>
 			</div>
 		</div>
+	</section>
+
+	<section class="mb-6 rounded-2xl bg-white p-6 shadow-sm">
+		<h2 class="mb-4 text-lg font-medium text-gray-900">Pagos</h2>
+
+		<div class="mb-4 grid grid-cols-1 gap-4 md:grid-cols-3">
+			<div class="rounded-xl {data.saldo <= 0 ? 'bg-green-50' : 'bg-amber-50'} p-4">
+				<p
+					class="text-xs uppercase tracking-wide {data.saldo <= 0
+						? 'text-green-700'
+						: 'text-amber-700'}"
+				>
+					Saldo pendiente
+				</p>
+				<p
+					class="mt-1 text-2xl font-semibold {data.saldo <= 0
+						? 'text-green-800'
+						: 'text-amber-800'}"
+				>
+					{formatMoney(data.saldo)}
+				</p>
+			</div>
+			<div class="rounded-xl bg-gray-50 p-4">
+				<p class="text-xs uppercase tracking-wide text-gray-600">Total pagado</p>
+				<p class="mt-1 text-2xl font-semibold text-gray-900">{formatMoney(data.totalPagado)}</p>
+			</div>
+			<div class="rounded-xl bg-gray-50 p-4">
+				<p class="text-xs uppercase tracking-wide text-gray-600">Total de la cotización</p>
+				<p class="mt-1 text-2xl font-semibold text-gray-900">{formatMoney(cotizacion.total)}</p>
+			</div>
+		</div>
+
+		{#if cotizacion.pagos.length === 0}
+			<p class="text-gray-600">Aún no hay pagos registrados.</p>
+		{:else}
+			<div class="mb-6 overflow-x-auto">
+				<table class="w-full text-left text-sm">
+					<thead class="border-b border-gray-200 text-gray-600">
+						<tr>
+							<th class="py-3 pr-4 font-medium">Fecha</th>
+							<th class="py-3 pr-4 font-medium">Monto</th>
+							<th class="py-3 pr-4 font-medium">Método</th>
+							<th class="py-3 pr-4 font-medium">Referencia</th>
+						</tr>
+					</thead>
+					<tbody class="divide-y divide-gray-100">
+						{#each cotizacion.pagos as pago (pago.id)}
+							<tr class="text-gray-900">
+								<td class="py-3 pr-4">{formatDate(pago.fecha)}</td>
+								<td class="py-3 pr-4">{formatMoney(pago.monto)}</td>
+								<td class="py-3 pr-4">{metodoLabel(pago.metodo)}</td>
+								<td class="py-3 pr-4">{pago.referencia ?? '-'}</td>
+							</tr>
+						{/each}
+					</tbody>
+				</table>
+			</div>
+		{/if}
+
+		{#if data.saldo > 0}
+			{#if form?.exitoPago}
+				<p class="mb-4 rounded-lg bg-green-100 px-4 py-2 text-sm text-green-800">
+					Pago registrado correctamente.
+				</p>
+			{/if}
+
+			{#if form?.error}
+				<p class="mb-4 rounded-lg bg-red-100 px-4 py-2 text-sm text-red-800">{form.error}</p>
+			{/if}
+
+			<form
+				method="POST"
+				action="?/registrarPago"
+				use:enhance
+				class="grid grid-cols-1 gap-4 md:grid-cols-4"
+			>
+				<div class="flex flex-col gap-1 md:col-span-1">
+					<label for="monto" class="text-sm font-medium text-gray-700">Monto *</label>
+					<input
+						id="monto"
+						name="monto"
+						type="number"
+						min="0.01"
+						step="0.01"
+						required
+						class="rounded-lg border border-gray-300 px-3 py-2 text-gray-900 focus:border-gray-900 focus:outline-none"
+					/>
+					{#if form?.errores?.monto}
+						<span class="text-sm text-red-600">{form.errores.monto}</span>
+					{/if}
+				</div>
+
+				<div class="flex flex-col gap-1 md:col-span-1">
+					<label for="metodo" class="text-sm font-medium text-gray-700">Método *</label>
+					<select
+						id="metodo"
+						name="metodo"
+						required
+						class="rounded-lg border border-gray-300 bg-white px-3 py-2 text-gray-900 focus:border-gray-900 focus:outline-none"
+					>
+						<option value="" disabled selected>Selecciona</option>
+						<option value="TRANSFERENCIA">Transferencia</option>
+						<option value="EFECTIVO">Efectivo</option>
+						<option value="CHEQUE">Cheque</option>
+						<option value="TARJETA">Tarjeta</option>
+					</select>
+					{#if form?.errores?.metodo}
+						<span class="text-sm text-red-600">{form.errores.metodo}</span>
+					{/if}
+				</div>
+
+				<div class="flex flex-col gap-1 md:col-span-1">
+					<label for="fecha" class="text-sm font-medium text-gray-700">Fecha (opcional)</label>
+					<input
+						id="fecha"
+						name="fecha"
+						type="date"
+						class="rounded-lg border border-gray-300 px-3 py-2 text-gray-900 focus:border-gray-900 focus:outline-none"
+					/>
+				</div>
+
+				<div class="flex flex-col gap-1 md:col-span-1">
+					<label for="referencia" class="text-sm font-medium text-gray-700"
+						>Referencia (opcional)</label
+					>
+					<input
+						id="referencia"
+						name="referencia"
+						type="text"
+						class="rounded-lg border border-gray-300 px-3 py-2 text-gray-900 focus:border-gray-900 focus:outline-none"
+					/>
+				</div>
+
+				<div class="md:col-span-4">
+					<button
+						type="submit"
+						class="rounded-lg bg-gray-900 px-5 py-2.5 text-white transition hover:bg-gray-800"
+					>
+						Registrar pago
+					</button>
+				</div>
+			</form>
+		{:else}
+			<p class="rounded-lg bg-green-100 px-4 py-2 text-sm text-green-800">
+				Esta cotización ya está saldada. No se requieren más pagos.
+			</p>
+		{/if}
 	</section>
 
 	{#if transiciones(cotizacion.estado).length > 0}

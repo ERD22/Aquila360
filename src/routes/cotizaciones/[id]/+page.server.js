@@ -2,6 +2,7 @@ import { error, fail, redirect } from '@sveltejs/kit';
 import { prisma } from '$lib/server/prisma.js';
 
 const ESTADOS_VALIDOS = ['BORRADOR', 'ENVIADA', 'APROBADA', 'RECHAZADA', 'FACTURADA', 'PAGADA'];
+const METODOS_VALIDOS = ['TRANSFERENCIA', 'EFECTIVO', 'CHEQUE', 'TARJETA'];
 
 export const load = async ({ params, locals }) => {
 	const { userId } = locals.auth();
@@ -19,6 +20,9 @@ export const load = async ({ params, locals }) => {
 			},
 			historial: {
 				orderBy: { creadoEn: 'desc' }
+			},
+			pagos: {
+				orderBy: { fecha: 'desc' }
 			}
 		}
 	});
@@ -26,6 +30,9 @@ export const load = async ({ params, locals }) => {
 	if (!cotizacionRaw) {
 		error(404, 'Cotización no encontrada.');
 	}
+
+	const totalPagado = cotizacionRaw.pagos.reduce((sum, p) => sum + Number(p.monto), 0);
+	const saldo = Number(cotizacionRaw.total) - totalPagado;
 
 	const cotizacion = {
 		...cotizacionRaw,
@@ -37,10 +44,14 @@ export const load = async ({ params, locals }) => {
 			cantidad: Number(c.cantidad),
 			precioUnitario: Number(c.precioUnitario),
 			subtotal: Number(c.subtotal)
+		})),
+		pagos: cotizacionRaw.pagos.map((p) => ({
+			...p,
+			monto: Number(p.monto)
 		}))
 	};
 
-	return { cotizacion };
+	return { cotizacion, totalPagado, saldo };
 };
 
 export const actions = {
@@ -82,5 +93,83 @@ export const actions = {
 		]);
 
 		return { exito: true };
+	},
+
+	registrarPago: async ({ params, request, locals }) => {
+		const { userId } = locals.auth();
+
+		if (!userId) {
+			redirect(303, '/');
+		}
+
+		const formData = await request.formData();
+		const monto = Number(String(formData.get('monto') ?? '').trim());
+		const metodo = String(formData.get('metodo') ?? '').trim();
+		const referencia = String(formData.get('referencia') ?? '').trim() || null;
+		const fechaRaw = String(formData.get('fecha') ?? '').trim() || null;
+		const fecha = fechaRaw ? new Date(fechaRaw) : new Date();
+
+		const errores = {};
+
+		if (!Number.isFinite(monto) || monto <= 0) {
+			errores.monto = 'El monto debe ser mayor a 0.';
+		}
+
+		if (!METODOS_VALIDOS.includes(metodo)) {
+			errores.metodo = 'Elige un método de pago válido.';
+		}
+
+		if (Object.keys(errores).length > 0) {
+			return fail(400, { errores });
+		}
+
+		const cotizacionActual = await prisma.cotizacion.findUnique({
+			where: { id: params.id }
+		});
+
+		if (!cotizacionActual) {
+			return fail(404, { error: 'Cotización no encontrada.' });
+		}
+
+		const pagosActuales = await prisma.pago.aggregate({
+			where: { cotizacionId: params.id },
+			_sum: { monto: true }
+		});
+
+		const totalPagadoActual = Number(pagosActuales._sum.monto ?? 0);
+		const saldoActual = Number(cotizacionActual.total) - totalPagadoActual;
+
+		const operaciones = [
+			prisma.pago.create({
+				data: {
+					cotizacionId: params.id,
+					monto,
+					fecha,
+					metodo,
+					referencia
+				}
+			})
+		];
+
+		if (saldoActual - monto <= 0 && cotizacionActual.estado !== 'PAGADA') {
+			operaciones.push(
+				prisma.cotizacion.update({
+					where: { id: params.id },
+					data: { estado: 'PAGADA' }
+				}),
+				prisma.historialCot.create({
+					data: {
+						cotizacionId: params.id,
+						estadoAnterior: cotizacionActual.estado,
+						estadoNuevo: 'PAGADA',
+						nota: 'Cotización saldada automáticamente al registrar el pago.'
+					}
+				})
+			);
+		}
+
+		await prisma.$transaction(operaciones);
+
+		return { exitoPago: true };
 	}
 };
