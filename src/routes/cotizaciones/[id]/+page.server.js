@@ -1,5 +1,6 @@
 import { error, fail, redirect } from '@sveltejs/kit';
 import { prisma } from '$lib/server/prisma.js';
+import { enviarCorreoCotizacion } from '$lib/server/email.js';
 
 const ESTADOS_VALIDOS = ['BORRADOR', 'ENVIADA', 'APROBADA', 'RECHAZADA', 'FACTURADA', 'PAGADA'];
 const METODOS_VALIDOS = ['TRANSFERENCIA', 'EFECTIVO', 'CHEQUE', 'TARJETA'];
@@ -91,6 +92,21 @@ export const actions = {
 				}
 			})
 		]);
+
+		if (nuevoEstado === 'ENVIADA') {
+			try {
+				const cotizacionConCliente = await prisma.cotizacion.findUnique({
+					where: { id: params.id },
+					include: { cliente: true }
+				});
+				await enviarCorreoCotizacion({
+					cotizacion: cotizacionConCliente,
+					cliente: cotizacionConCliente.cliente
+				});
+			} catch (emailError) {
+				console.error('Error al enviar correo de cotización:', emailError);
+			}
+		}
 
 		return { exito: true };
 	},
