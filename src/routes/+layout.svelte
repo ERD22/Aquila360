@@ -20,6 +20,7 @@
 					<div class="flex items-center gap-4 text-sm">
 						<a href="/dashboard" class="text-gray-600 transition hover:text-gray-900">Dashboard</a>
 						<a href="/clientes" class="text-gray-600 transition hover:text-gray-900">Clientes</a>
+						<a href="/cotizaciones" class="text-gray-600 transition hover:text-gray-900">Cotizaciones</a>
 						<a href="/cobranza" class="text-gray-600 transition hover:text-gray-900">Cobranza</a>
 					</div>
 				</div>
