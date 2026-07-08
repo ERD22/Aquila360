@@ -1,4 +1,4 @@
-<script>
+﻿<script>
 	import { enhance } from '$app/forms';
 
 	let { data, form } = $props();
@@ -149,7 +149,14 @@
 					<tbody class="divide-y divide-gray-100">
 						{#each data.clientes as cliente (cliente.id)}
 							<tr class="text-gray-900">
-								<td class="py-3 pr-4">{cliente.nombre}</td>
+								<td class="py-3 pr-4">
+									<a
+										href="/clientes/{cliente.id}"
+										class="font-medium text-gray-900 transition hover:text-gray-600"
+									>
+										{cliente.nombre}
+									</a>
+								</td>
 								<td class="py-3 pr-4">{cliente.empresa ?? '-'}</td>
 								<td class="py-3 pr-4">{cliente.rfc ?? '-'}</td>
 								<td class="py-3 pr-4">{cliente.telefono ?? '-'}</td>
@@ -158,7 +165,7 @@
 								<td class="py-3 pr-4">
 									<div class="flex items-center gap-3">
 										<a
-											href="/clientes/{cliente.id}"
+											href="/clientes/{cliente.id}/editar"
 											class="text-sm font-medium text-gray-900 transition hover:text-gray-600"
 										>
 											Editar

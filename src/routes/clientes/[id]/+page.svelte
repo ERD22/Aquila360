@@ -1,125 +1,167 @@
 ﻿<script>
-	import { enhance } from '$app/forms';
+	let { data } = $props();
+	const { cliente, cotizaciones, totales } = data;
 
-	let { data, form } = $props();
-	const cliente = data.cliente;
+	function formatMoney(value) {
+		return new Intl.NumberFormat('es-MX', {
+			style: 'currency',
+			currency: 'MXN',
+			minimumFractionDigits: 2
+		}).format(Number(value ?? 0));
+	}
+
+	function formatDate(date) {
+		if (!date) return '-';
+		return new Date(date).toLocaleDateString('es-MX', {
+			day: '2-digit',
+			month: '2-digit',
+			year: 'numeric'
+		});
+	}
+
+	function badgeClasses(estado) {
+		switch (estado) {
+			case 'APROBADA': return 'bg-green-100 text-green-800';
+			case 'ENVIADA': return 'bg-blue-100 text-blue-800';
+			case 'FACTURADA': return 'bg-purple-100 text-purple-800';
+			case 'PAGADA': return 'bg-emerald-100 text-emerald-800';
+			case 'RECHAZADA': return 'bg-red-100 text-red-800';
+			default: return 'bg-gray-100 text-gray-700';
+		}
+	}
+
+	function badgeLabel(estado) {
+		const labels = {
+			BORRADOR: 'Borrador', ENVIADA: 'Enviada', APROBADA: 'Aprobada',
+			RECHAZADA: 'Rechazada', FACTURADA: 'Facturada', PAGADA: 'Pagada'
+		};
+		return labels[estado] ?? estado;
+	}
 </script>
 
 <main class="mx-auto max-w-6xl p-6">
-	<h1 class="mb-6 text-2xl font-semibold text-gray-900">Editar cliente</h1>
+	<div class="mb-6">
+		<a href="/clientes" class="text-sm text-gray-600 transition hover:text-gray-900">
+			← Volver a clientes
+		</a>
+	</div>
+
+	<section class="mb-6 rounded-2xl bg-white p-6 shadow-sm">
+		<div class="flex flex-col items-start justify-between gap-4 md:flex-row md:items-center">
+			<div>
+				<h1 class="text-2xl font-semibold text-gray-900">{cliente.nombre}</h1>
+				{#if cliente.empresa}
+					<p class="mt-1 text-gray-600">{cliente.empresa}</p>
+				{/if}
+			</div>
+			<a
+				href="/clientes/{cliente.id}/editar"
+				class="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
+			>
+				Editar
+			</a>
+		</div>
+
+		<div class="mt-4 grid grid-cols-1 gap-3 text-sm text-gray-700 md:grid-cols-2 lg:grid-cols-4">
+			{#if cliente.correo}
+				<div>
+					<p class="text-xs uppercase tracking-wide text-gray-500">Correo</p>
+					<p>{cliente.correo}</p>
+				</div>
+			{/if}
+			{#if cliente.telefono}
+				<div>
+					<p class="text-xs uppercase tracking-wide text-gray-500">Teléfono</p>
+					<p>{cliente.telefono}</p>
+				</div>
+			{/if}
+			{#if cliente.rfc}
+				<div>
+					<p class="text-xs uppercase tracking-wide text-gray-500">RFC</p>
+					<p>{cliente.rfc}</p>
+				</div>
+			{/if}
+			{#if cliente.direccion}
+				<div>
+					<p class="text-xs uppercase tracking-wide text-gray-500">Dirección</p>
+					<p>{cliente.direccion}</p>
+				</div>
+			{/if}
+			{#if cliente.notas}
+				<div class="md:col-span-2 lg:col-span-4">
+					<p class="text-xs uppercase tracking-wide text-gray-500">Notas</p>
+					<p>{cliente.notas}</p>
+				</div>
+			{/if}
+		</div>
+	</section>
+
+	<div class="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
+		<div class="rounded-2xl bg-white p-5 shadow-sm">
+			<p class="text-xs font-medium uppercase tracking-wide text-gray-500">Total facturado</p>
+			<p class="mt-1 text-2xl font-semibold text-gray-900">{formatMoney(totales.totalFacturado)}</p>
+		</div>
+		<div class="rounded-2xl bg-white p-5 shadow-sm">
+			<p class="text-xs font-medium uppercase tracking-wide text-gray-500">Total cobrado</p>
+			<p class="mt-1 text-2xl font-semibold text-emerald-700">{formatMoney(totales.totalCobrado)}</p>
+		</div>
+		<div class="rounded-2xl bg-white p-5 shadow-sm">
+			<p class="text-xs font-medium uppercase tracking-wide text-gray-500">Saldo pendiente</p>
+			<p class="mt-1 text-2xl font-semibold text-amber-700">{formatMoney(totales.saldoPendiente)}</p>
+		</div>
+	</div>
 
 	<section class="rounded-2xl bg-white p-6 shadow-sm">
-		{#if form?.errores}
-			<div class="mb-4 rounded-lg bg-red-100 px-4 py-2 text-sm text-red-800">
-				{#if form.errores.nombre}
-					<p>{form.errores.nombre}</p>
-				{/if}
-				{#if form.errores.correo}
-					<p>{form.errores.correo}</p>
-				{/if}
-				{#if form.errores.rfc}
-					<p>{form.errores.rfc}</p>
-				{/if}
-			</div>
-		{/if}
+		<h2 class="mb-4 text-lg font-medium text-gray-900">Cotizaciones</h2>
 
-		<form method="POST" use:enhance class="grid grid-cols-1 gap-4 md:grid-cols-2">
-			<div class="flex flex-col gap-1">
-				<label for="nombre" class="text-sm font-medium text-gray-700">Nombre *</label>
-				<input
-					id="nombre"
-					name="nombre"
-					type="text"
-					required
-					value={form?.valores?.nombre ?? cliente.nombre}
-					class="rounded-lg border border-gray-300 px-3 py-2 text-gray-900 focus:border-gray-900 focus:outline-none"
-				/>
-			</div>
-
-			<div class="flex flex-col gap-1">
-				<label for="empresa" class="text-sm font-medium text-gray-700">Empresa</label>
-				<input
-					id="empresa"
-					name="empresa"
-					type="text"
-					value={form?.valores?.empresa ?? cliente.empresa ?? ''}
-					class="rounded-lg border border-gray-300 px-3 py-2 text-gray-900 focus:border-gray-900 focus:outline-none"
-				/>
-			</div>
-
-			<div class="flex flex-col gap-1">
-				<label for="rfc" class="text-sm font-medium text-gray-700">RFC</label>
-				<input
-					id="rfc"
-					name="rfc"
-					type="text"
-					value={form?.valores?.rfc ?? cliente.rfc ?? ''}
-					class="rounded-lg border border-gray-300 px-3 py-2 text-gray-900 focus:border-gray-900 focus:outline-none"
-				/>
-				{#if form?.errores?.rfc}
-					<span class="text-sm text-red-600">{form.errores.rfc}</span>
-				{/if}
-			</div>
-
-			<div class="flex flex-col gap-1">
-				<label for="correo" class="text-sm font-medium text-gray-700">Correo *</label>
-				<input
-					id="correo"
-					name="correo"
-					type="email"
-					required
-					value={form?.valores?.correo ?? cliente.correo}
-					class="rounded-lg border border-gray-300 px-3 py-2 text-gray-900 focus:border-gray-900 focus:outline-none"
-				/>
-			</div>
-
-			<div class="flex flex-col gap-1">
-				<label for="telefono" class="text-sm font-medium text-gray-700">Teléfono</label>
-				<input
-					id="telefono"
-					name="telefono"
-					type="tel"
-					value={form?.valores?.telefono ?? cliente.telefono ?? ''}
-					class="rounded-lg border border-gray-300 px-3 py-2 text-gray-900 focus:border-gray-900 focus:outline-none"
-				/>
-			</div>
-
-			<div class="flex flex-col gap-1">
-				<label for="direccion" class="text-sm font-medium text-gray-700">Dirección</label>
-				<input
-					id="direccion"
-					name="direccion"
-					type="text"
-					value={form?.valores?.direccion ?? cliente.direccion ?? ''}
-					class="rounded-lg border border-gray-300 px-3 py-2 text-gray-900 focus:border-gray-900 focus:outline-none"
-				/>
-			</div>
-
-			<div class="flex flex-col gap-1 md:col-span-2">
-				<label for="notas" class="text-sm font-medium text-gray-700">Notas</label>
-				<textarea
-					id="notas"
-					name="notas"
-					rows="3"
-					value={form?.valores?.notas ?? cliente.notas ?? ''}
-					class="rounded-lg border border-gray-300 px-3 py-2 text-gray-900 focus:border-gray-900 focus:outline-none"
-				></textarea>
-			</div>
-
-			<div class="flex items-center gap-3 md:col-span-2">
-				<button
-					type="submit"
-					class="rounded-lg bg-gray-900 px-5 py-2.5 text-white transition hover:bg-gray-800"
-				>
-					Guardar cambios
-				</button>
+		{#if cotizaciones.length === 0}
+			<div class="py-6 text-center">
+				<p class="mb-3 text-gray-600">Este cliente aún no tiene cotizaciones.</p>
 				<a
-					href="/clientes"
-					class="rounded-lg border border-gray-300 px-5 py-2.5 text-gray-700 transition hover:bg-gray-50"
+					href="/cotizaciones/nueva"
+					class="rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-gray-800"
 				>
-					Cancelar
+					Crear cotización
 				</a>
 			</div>
-		</form>
+		{:else}
+			<div class="overflow-x-auto">
+				<table class="w-full text-left text-sm">
+					<thead class="border-b border-gray-200 text-gray-600">
+						<tr>
+							<th class="py-3 pr-4 font-medium">Número</th>
+							<th class="py-3 pr-4 font-medium">Estado</th>
+							<th class="py-3 pr-4 font-medium">Total</th>
+							<th class="py-3 pr-4 font-medium">Pagado</th>
+							<th class="py-3 pr-4 font-medium">Fecha</th>
+						</tr>
+					</thead>
+					<tbody class="divide-y divide-gray-100">
+						{#each cotizaciones as cot (cot.id)}
+							<tr class="text-gray-900">
+								<td class="py-3 pr-4">
+									<a
+										href="/cotizaciones/{cot.id}"
+										class="font-medium text-gray-900 transition hover:text-gray-600"
+									>
+										{cot.numero}
+									</a>
+								</td>
+								<td class="py-3 pr-4">
+									<span
+										class="rounded-full px-2.5 py-0.5 text-xs font-medium {badgeClasses(cot.estado)}"
+									>
+										{badgeLabel(cot.estado)}
+									</span>
+								</td>
+								<td class="py-3 pr-4">{formatMoney(cot.total)}</td>
+								<td class="py-3 pr-4">{formatMoney(cot.pagado)}</td>
+								<td class="py-3 pr-4">{formatDate(cot.creadoEn)}</td>
+							</tr>
+						{/each}
+					</tbody>
+				</table>
+			</div>
+		{/if}
 	</section>
 </main>

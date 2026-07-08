@@ -119,9 +119,21 @@
 					{cotizacion.cliente?.empresa ? `— ${cotizacion.cliente.empresa}` : ''}
 				</p>
 			</div>
-			<span class="rounded-full px-3 py-1 text-sm font-medium {badgeClasses(cotizacion.estado)}">
-				{badgeLabel(cotizacion.estado)}
-			</span>
+			<div class="flex items-center gap-3">
+				<span
+					class="rounded-full px-3 py-1 text-sm font-medium {badgeClasses(cotizacion.estado)}"
+				>
+					{badgeLabel(cotizacion.estado)}
+				</span>
+				{#if cotizacion.estado === 'BORRADOR'}
+					<a
+						href="/cotizaciones/{cotizacion.id}/editar"
+						class="rounded-lg border border-gray-300 px-4 py-1.5 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
+					>
+						Editar
+					</a>
+				{/if}
+			</div>
 		</div>
 
 		<div class="mt-4 grid grid-cols-1 gap-4 text-sm text-gray-600 md:grid-cols-3">
