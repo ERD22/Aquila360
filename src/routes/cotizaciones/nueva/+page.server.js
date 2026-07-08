@@ -72,11 +72,16 @@ export const actions = {
 		const iva = subtotalGeneral * 0.16;
 		const total = subtotalGeneral + iva;
 
-		const ultima = await prisma.cotizacion.findFirst({
+		const anio = new Date().getFullYear();
+		const prefijo = `COT-${anio}-`;
+		const ultimaDelAnio = await prisma.cotizacion.findFirst({
+			where: { numero: { startsWith: prefijo } },
 			orderBy: { numero: 'desc' }
 		});
-		const ultimoNumero = ultima ? parseInt(ultima.numero.replace('COT-', ''), 10) : 0;
-		const numero = 'COT-' + String(ultimoNumero + 1).padStart(6, '0');
+		const ultimoConsecutivo = ultimaDelAnio
+			? parseInt(ultimaDelAnio.numero.split('-')[2], 10)
+			: 0;
+		const numero = `${prefijo}${String(ultimoConsecutivo + 1).padStart(3, '0')}`;
 
 		await prisma.cotizacion.create({
 			data: {

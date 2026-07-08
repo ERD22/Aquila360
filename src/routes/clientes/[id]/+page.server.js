@@ -46,6 +46,10 @@ export const actions = {
 			errores.correo = 'El correo es obligatorio.';
 		}
 
+		if (rfc && !/^[A-Za-z0-9]{12,13}$/.test(rfc)) {
+			errores.rfc = 'El RFC debe tener 12 o 13 caracteres alfanuméricos.';
+		}
+
 		if (Object.keys(errores).length > 0) {
 			return fail(400, {
 				errores,

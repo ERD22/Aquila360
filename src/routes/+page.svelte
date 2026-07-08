@@ -5,7 +5,7 @@
 <main class="flex min-h-screen flex-col items-center justify-center gap-6 bg-gray-50 p-6">
 	<Show when="signed-out">
 		<div class="flex flex-col items-center gap-4 rounded-2xl bg-white p-8 shadow-sm">
-			<h1 class="text-2xl font-semibold text-gray-900">Gestor PyME</h1>
+			<h1 class="text-2xl font-semibold text-gray-900">Aquila360</h1>
 			<p class="text-gray-600">Inicia sesión para continuar</p>
 			<SignInButton
 				mode="redirect"

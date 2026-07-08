@@ -1,4 +1,4 @@
-<script>
+﻿<script>
 	import { enhance } from '$app/forms';
 
 	let { data, form } = $props();
@@ -16,6 +16,9 @@
 				{/if}
 				{#if form.errores.correo}
 					<p>{form.errores.correo}</p>
+				{/if}
+				{#if form.errores.rfc}
+					<p>{form.errores.rfc}</p>
 				{/if}
 			</div>
 		{/if}
@@ -53,6 +56,9 @@
 					value={form?.valores?.rfc ?? cliente.rfc ?? ''}
 					class="rounded-lg border border-gray-300 px-3 py-2 text-gray-900 focus:border-gray-900 focus:outline-none"
 				/>
+				{#if form?.errores?.rfc}
+					<span class="text-sm text-red-600">{form.errores.rfc}</span>
+				{/if}
 			</div>
 
 			<div class="flex flex-col gap-1">
