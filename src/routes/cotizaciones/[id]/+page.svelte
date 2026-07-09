@@ -231,6 +231,10 @@
 			</div>
 		</div>
 
+		{#if form?.error}
+			<p class="mb-4 rounded-lg bg-red-100 px-4 py-2 text-sm text-red-800">{form.error}</p>
+		{/if}
+
 		{#if cotizacion.pagos.length === 0}
 			<p class="text-gray-600">Aún no hay pagos registrados.</p>
 		{:else}
@@ -242,6 +246,9 @@
 							<th class="py-3 pr-4 font-medium">Monto</th>
 							<th class="py-3 pr-4 font-medium">Método</th>
 							<th class="py-3 pr-4 font-medium">Referencia</th>
+							{#if cotizacion.estado !== 'PAGADA'}
+								<th class="py-3 pr-4 font-medium">Acciones</th>
+							{/if}
 						</tr>
 					</thead>
 					<tbody class="divide-y divide-gray-100">
@@ -251,6 +258,23 @@
 								<td class="py-3 pr-4">{formatMoney(pago.monto)}</td>
 								<td class="py-3 pr-4">{metodoLabel(pago.metodo)}</td>
 								<td class="py-3 pr-4">{pago.referencia ?? '-'}</td>
+								{#if cotizacion.estado !== 'PAGADA'}
+									<td class="py-3 pr-4">
+										<form method="POST" action="?/eliminarPago">
+											<input type="hidden" name="pagoId" value={pago.id} />
+											<button
+												type="submit"
+												onclick={(e) => {
+													if (!confirm('¿Estás seguro? Esta acción no se puede deshacer.'))
+														e.preventDefault();
+												}}
+												class="text-sm font-medium text-red-600 transition hover:text-red-800"
+											>
+												Eliminar
+											</button>
+										</form>
+									</td>
+								{/if}
 							</tr>
 						{/each}
 					</tbody>

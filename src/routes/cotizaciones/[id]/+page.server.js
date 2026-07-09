@@ -1,4 +1,4 @@
-﻿﻿import { error, fail, redirect } from '@sveltejs/kit';
+﻿import { error, fail, redirect } from '@sveltejs/kit';
 import { prisma } from '$lib/server/prisma.js';
 import { enviarCorreoCotizacion } from '$lib/server/email.js';
 
@@ -185,6 +185,47 @@ export const actions = {
 		}
 
 		await prisma.$transaction(operaciones);
+
+		redirect(303, `/cotizaciones/${params.id}`);
+	},
+
+	eliminarPago: async ({ params, request, locals }) => {
+		const { userId } = locals.auth();
+
+		if (!userId) {
+			redirect(303, '/');
+		}
+
+		const formData = await request.formData();
+		const pagoId = String(formData.get('pagoId') ?? '').trim();
+
+		if (!pagoId) {
+			return fail(400, { error: 'Falta el identificador del pago.' });
+		}
+
+		const cotizacionActual = await prisma.cotizacion.findUnique({
+			where: { id: params.id }
+		});
+
+		if (!cotizacionActual) {
+			return fail(404, { error: 'Cotización no encontrada.' });
+		}
+
+		if (cotizacionActual.estado === 'PAGADA') {
+			return fail(400, {
+				error: 'No se puede eliminar un pago de una cotización ya saldada.'
+			});
+		}
+
+		const pago = await prisma.pago.findFirst({
+			where: { id: pagoId, cotizacionId: params.id }
+		});
+
+		if (!pago) {
+			return fail(404, { error: 'Pago no encontrado.' });
+		}
+
+		await prisma.pago.delete({ where: { id: pagoId } });
 
 		redirect(303, `/cotizaciones/${params.id}`);
 	}
