@@ -168,8 +168,8 @@
 			</form>
 		</div>
 
-		{#if data.clientes.length === 0}
-			{#if data.buscar}
+		{#if clientesFiltrados.length === 0}
+			{#if busqueda.trim()}
 				<p class="text-gray-600">
 					No encontramos clientes con ese criterio. Prueba con otro término.
 				</p>
