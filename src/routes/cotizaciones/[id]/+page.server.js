@@ -1,4 +1,4 @@
-import { error, fail, redirect } from '@sveltejs/kit';
+﻿﻿import { error, fail, redirect } from '@sveltejs/kit';
 import { prisma } from '$lib/server/prisma.js';
 import { enviarCorreoCotizacion } from '$lib/server/email.js';
 
@@ -97,7 +97,7 @@ export const actions = {
 			try {
 				const cotizacionConCliente = await prisma.cotizacion.findUnique({
 					where: { id: params.id },
-					include: { cliente: true }
+					include: { cliente: true, conceptos: true }
 				});
 				await enviarCorreoCotizacion({
 					cotizacion: cotizacionConCliente,
