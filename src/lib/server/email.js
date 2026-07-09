@@ -1,5 +1,5 @@
 import { Resend } from 'resend';
-import { RESEND_API_KEY, FROM_EMAIL, TEST_EMAIL, PUBLIC_ORIGIN } from '$env/static/private';
+import { RESEND_API_KEY, FROM_EMAIL, TEST_EMAIL, APP_ORIGIN } from '$env/static/private';
 
 const resend = new Resend(RESEND_API_KEY);
 
@@ -58,7 +58,7 @@ export async function enviarCorreoCotizacion({ cotizacion, cliente }) {
 			</p>`
 		: '';
 
-	const urlCotizacion = `${PUBLIC_ORIGIN}/cotizaciones/${cotizacion.id}`;
+	const urlCotizacion = `${APP_ORIGIN}/cotizaciones/${cotizacion.id}`;
 
 	const html = `
 <!DOCTYPE html>
