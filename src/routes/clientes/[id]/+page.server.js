@@ -41,7 +41,14 @@ export const load = async ({ params, locals }) => {
 			saldoPendiente += saldo;
 		}
 
-		return { ...cot, total, pagado };
+		return {
+			...cot,
+			total,
+			pagado,
+			subtotal: Number(cot.subtotal),
+			iva: Number(cot.iva),
+			pagos: cot.pagos.map((p) => ({ ...p, monto: Number(p.monto) }))
+		};
 	});
 
 	const { cotizaciones: _, ...clienteBase } = clienteRaw;
