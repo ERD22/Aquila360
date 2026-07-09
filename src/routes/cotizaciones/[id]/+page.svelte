@@ -1,5 +1,6 @@
-<script>
+﻿<script>
 	import { enhance } from '$app/forms';
+	import { invalidateAll } from '$app/navigation';
 
 	let { data, form } = $props();
 	const cotizacion = data.cotizacion;
@@ -268,12 +269,7 @@
 				<p class="mb-4 rounded-lg bg-red-100 px-4 py-2 text-sm text-red-800">{form.error}</p>
 			{/if}
 
-			<form
-				method="POST"
-				action="?/registrarPago"
-				use:enhance
-				class="grid grid-cols-1 gap-4 md:grid-cols-4"
-			>
+			<form method="POST" action="?/registrarPago" class="grid grid-cols-1 gap-4 md:grid-cols-4">
 				<div class="flex flex-col gap-1 md:col-span-1">
 					<label for="monto" class="text-sm font-medium text-gray-700">Monto *</label>
 					<input
@@ -363,7 +359,7 @@
 
 			<div class="flex flex-wrap items-center gap-3">
 				{#each transiciones(cotizacion.estado) as opcion (opcion.estado)}
-					<form method="POST" action="?/cambiarEstado" use:enhance>
+					<form method="POST" action="?/cambiarEstado">
 						<input type="hidden" name="nuevoEstado" value={opcion.estado} />
 						<button
 							type="submit"

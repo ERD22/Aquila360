@@ -108,7 +108,7 @@ export const actions = {
 			}
 		}
 
-		return { exito: true };
+		redirect(303, `/cotizaciones/${params.id}`);
 	},
 
 	registrarPago: async ({ params, request, locals }) => {
@@ -186,6 +186,6 @@ export const actions = {
 
 		await prisma.$transaction(operaciones);
 
-		return { exitoPago: true };
+		redirect(303, `/cotizaciones/${params.id}`);
 	}
 };

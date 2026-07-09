@@ -126,12 +126,43 @@
 	</section>
 
 	<section class="rounded-2xl bg-white p-6 shadow-sm">
-		<h2 class="mb-4 text-lg font-medium text-gray-900">Clientes activos</h2>
+		<div class="mb-4 flex flex-col items-start justify-between gap-3 sm:flex-row sm:items-center">
+			<h2 class="text-lg font-medium text-gray-900">Clientes activos</h2>
+			<form method="GET" class="flex items-center gap-2">
+				<input
+					name="buscar"
+					type="text"
+					value={data.buscar}
+					placeholder="Buscar por nombre, empresa o RFC…"
+					class="rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 focus:border-gray-900 focus:outline-none"
+				/>
+				<button
+					type="submit"
+					class="rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-gray-800"
+				>
+					Buscar
+				</button>
+				{#if data.buscar}
+					<a
+						href="/clientes"
+						class="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
+					>
+						Limpiar
+					</a>
+				{/if}
+			</form>
+		</div>
 
 		{#if data.clientes.length === 0}
-			<p class="text-gray-600">
-				Aún no hay clientes registrados. Agrega el primero usando el formulario de arriba.
-			</p>
+			{#if data.buscar}
+				<p class="text-gray-600">
+					No encontramos clientes con ese criterio. Prueba con otro término.
+				</p>
+			{:else}
+				<p class="text-gray-600">
+					Aún no hay clientes registrados. Agrega el primero usando el formulario de arriba.
+				</p>
+			{/if}
 		{:else}
 			<div class="overflow-x-auto">
 				<table class="w-full text-left text-sm">
@@ -185,6 +216,30 @@
 						{/each}
 					</tbody>
 				</table>
+			</div>
+
+			<div class="mt-4 flex flex-col items-center justify-between gap-3 sm:flex-row">
+				<p class="text-sm text-gray-600">
+					Página {data.pagina} de {data.totalPaginas} ({data.total} clientes)
+				</p>
+				<div class="flex items-center gap-2">
+					{#if data.pagina > 1}
+						<a
+							href="?buscar={data.buscar}&pagina={data.pagina - 1}"
+							class="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
+						>
+							← Anterior
+						</a>
+					{/if}
+					{#if data.pagina < data.totalPaginas}
+						<a
+							href="?buscar={data.buscar}&pagina={data.pagina + 1}"
+							class="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
+						>
+							Siguiente →
+						</a>
+					{/if}
+				</div>
 			</div>
 		{/if}
 	</section>

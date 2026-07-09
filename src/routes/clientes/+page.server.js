@@ -1,19 +1,44 @@
 import { fail, redirect } from '@sveltejs/kit';
 import { prisma } from '$lib/server/prisma.js';
 
-export const load = async ({ locals }) => {
+const POR_PAGINA = 20;
+
+export const load = async ({ url, locals }) => {
 	const { userId } = locals.auth();
 
 	if (!userId) {
 		redirect(303, '/');
 	}
 
-	const clientes = await prisma.cliente.findMany({
-		where: { activo: true },
-		orderBy: { creadoEn: 'desc' }
-	});
+	const buscar = String(url.searchParams.get('buscar') ?? '').trim();
+	const pagina = Math.max(1, parseInt(url.searchParams.get('pagina') ?? '1', 10) || 1);
 
-	return { clientes };
+	const where = {
+		activo: true,
+		...(buscar
+			? {
+					OR: [
+						{ nombre: { contains: buscar, mode: 'insensitive' } },
+						{ empresa: { contains: buscar, mode: 'insensitive' } },
+						{ rfc: { contains: buscar, mode: 'insensitive' } }
+					]
+				}
+			: {})
+	};
+
+	const [clientes, total] = await Promise.all([
+		prisma.cliente.findMany({
+			where,
+			orderBy: { creadoEn: 'desc' },
+			skip: (pagina - 1) * POR_PAGINA,
+			take: POR_PAGINA
+		}),
+		prisma.cliente.count({ where })
+	]);
+
+	const totalPaginas = Math.max(1, Math.ceil(total / POR_PAGINA));
+
+	return { clientes, buscar, pagina, totalPaginas, total };
 };
 
 export const actions = {
