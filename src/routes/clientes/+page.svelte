@@ -3,6 +3,21 @@
 
 	let { data, form } = $props();
 
+	let busqueda = $state('');
+
+	const clientesFiltrados = $derived(
+		busqueda.trim() === ''
+			? data.clientes
+			: data.clientes.filter((c) => {
+					const texto = busqueda.toLowerCase();
+					return (
+						c.nombre?.toLowerCase().includes(texto) ||
+						c.empresa?.toLowerCase().includes(texto) ||
+						c.rfc?.toLowerCase().includes(texto)
+					);
+				})
+	);
+
 	function formatDate(date) {
 		if (!date) return '-';
 		return new Date(date).toLocaleDateString('es-MX', {
@@ -131,8 +146,8 @@
 			<form method="GET" class="flex items-center gap-2">
 				<input
 					name="buscar"
+					bind:value={busqueda}
 					type="text"
-					value={data.buscar}
 					placeholder="Buscar por nombre, empresa o RFC…"
 					class="rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 focus:border-gray-900 focus:outline-none"
 				/>
@@ -178,7 +193,7 @@
 						</tr>
 					</thead>
 					<tbody class="divide-y divide-gray-100">
-						{#each data.clientes as cliente (cliente.id)}
+						{#each clientesFiltrados as cliente (cliente.id)}
 							<tr class="text-gray-900">
 								<td class="py-3 pr-4">
 									<a
