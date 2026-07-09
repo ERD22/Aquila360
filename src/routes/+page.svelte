@@ -2,15 +2,43 @@
 	import { SignInButton, UserButton, Show } from 'svelte-clerk/client';
 </script>
 
-<main class="flex min-h-screen flex-col items-center justify-center gap-6 bg-gray-50 p-6">
+<main
+	class="flex min-h-screen flex-col items-center justify-center bg-gradient-to-br from-gray-900 via-gray-900 to-gray-800 p-6"
+>
+	<div class="mb-8 flex flex-col items-center">
+		<svg
+			class="mb-4 h-14 w-14 text-amber-400"
+			viewBox="0 0 64 64"
+			fill="none"
+			stroke="currentColor"
+			stroke-width="2.5"
+			stroke-linecap="round"
+			stroke-linejoin="round"
+		>
+			<path d="M32 12 L32 46" />
+			<path d="M32 16 C 22 18, 12 24, 6 34 C 16 32, 24 30, 32 30" />
+			<path d="M32 16 C 42 18, 52 24, 58 34 C 48 32, 40 30, 32 30" />
+			<path d="M32 30 C 26 34, 22 40, 20 48 C 26 44, 30 42, 32 42" />
+			<path d="M32 30 C 38 34, 42 40, 44 48 C 38 44, 34 42, 32 42" />
+			<path d="M32 42 L32 52" />
+			<circle cx="32" cy="10" r="2.5" fill="currentColor" />
+		</svg>
+
+		<h1 class="text-4xl font-bold tracking-tight text-white">Aquila360</h1>
+		<p class="mt-2 text-sm text-gray-400">Gestión de clientes, cotizaciones y cobranza</p>
+	</div>
+
 	<Show when="signed-out">
-		<div class="flex flex-col items-center gap-4 rounded-2xl bg-white p-8 shadow-sm">
-			<h1 class="text-2xl font-semibold text-gray-900">Aquila360</h1>
-			<p class="text-gray-600">Inicia sesión para continuar</p>
+		<div class="w-full max-w-sm rounded-2xl bg-white p-8 shadow-2xl">
+			<div class="mb-6 text-center">
+				<h2 class="text-lg font-semibold text-gray-900">Bienvenido de vuelta</h2>
+				<p class="mt-1 text-sm text-gray-500">Inicia sesión para acceder a tu despacho</p>
+			</div>
+
 			<SignInButton
 				mode="redirect"
 				forceRedirectUrl="/dashboard"
-				class="inline-flex items-center gap-2 rounded-lg bg-gray-900 px-5 py-2.5 text-white transition hover:bg-gray-800"
+				class="inline-flex w-full items-center justify-center gap-3 rounded-lg bg-gray-900 px-5 py-3 font-medium text-white transition hover:bg-gray-800"
 			>
 				<svg class="h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
 					<path
@@ -31,19 +59,30 @@
 				</svg>
 				Iniciar sesión con Google
 			</SignInButton>
+
+			<p class="mt-6 text-center text-xs text-gray-400">
+				Acceso exclusivo para colaboradores del despacho
+			</p>
 		</div>
 	</Show>
 
 	<Show when="signed-in">
-		<div class="flex flex-col items-center gap-4 rounded-2xl bg-white p-8 shadow-sm">
-			<h1 class="text-2xl font-semibold text-gray-900">¡Hola de nuevo!</h1>
+		<div class="w-full max-w-sm rounded-2xl bg-white p-8 text-center shadow-2xl">
+			<h2 class="text-lg font-semibold text-gray-900">¡Hola de nuevo!</h2>
+			<p class="mt-1 text-sm text-gray-500">Tu despacho te está esperando</p>
+
 			<a
 				href="/dashboard"
-				class="rounded-lg bg-gray-900 px-5 py-2.5 text-white transition hover:bg-gray-800"
+				class="mt-6 inline-flex w-full items-center justify-center rounded-lg bg-gray-900 px-5 py-3 font-medium text-white transition hover:bg-gray-800"
 			>
 				Ir al dashboard
 			</a>
-			<UserButton />
+
+			<div class="mt-6 flex justify-center">
+				<UserButton />
+			</div>
 		</div>
 	</Show>
+
+	<p class="mt-8 text-xs text-gray-500">GestorPyme v1.0</p>
 </main>
