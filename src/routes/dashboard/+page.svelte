@@ -6,7 +6,7 @@
 		kpis,
 		cotizacionesPorEstado,
 		ingresosPorMes,
-		cotizacionesPorVencer,
+		ultimasCotizaciones,
 		topClientes,
 		tendenciaCobrado
 	} = data;
@@ -246,26 +246,33 @@
 
 		<div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
 			<section class="rounded-2xl bg-white p-6 shadow-sm">
-				<h2 class="mb-4 text-lg font-semibold text-gray-900">Cotizaciones por vencer</h2>
+				<h2 class="mb-4 text-lg font-semibold text-gray-900">Últimas cotizaciones</h2>
 
-				{#if cotizacionesPorVencer.length === 0}
-					<p class="text-gray-600">
-						¡Buenas noticias! No hay cotizaciones próximas a vencer con saldo pendiente en los
-						siguientes 15 días.
-					</p>
+				{#if ultimasCotizaciones.length === 0}
+					<p class="text-gray-600">Aún no hay cotizaciones registradas.</p>
 				{:else}
 					<ul class="space-y-3">
-						{#each cotizacionesPorVencer as cuenta (cuenta.numero)}
+						{#each ultimasCotizaciones as cot (cot.id)}
 							<li
 								class="flex items-center justify-between border-b border-gray-100 pb-3 last:border-0"
 							>
 								<div>
-									<p class="font-medium text-gray-900">{cuenta.numero}</p>
-									<p class="text-sm text-gray-600">{cuenta.cliente}</p>
+									<a
+										href="/cotizaciones/{cot.id}"
+										class="font-medium text-gray-900 transition hover:text-gray-600"
+									>
+										{cot.numero}
+									</a>
+									<p class="text-sm text-gray-500">{cot.cliente}</p>
 								</div>
-								<div class="text-right">
-									<p class="font-medium text-gray-900">{formatMoney(cuenta.saldo)}</p>
-									<p class="text-xs text-gray-500">Vence {formatDate(cuenta.vencimiento)}</p>
+								<div class="flex flex-col items-end gap-1">
+									<span
+										class="rounded-full px-2 py-0.5 text-xs font-medium {cot.estado === 'APROBADA' ? 'bg-green-100 text-green-800' : cot.estado === 'ENVIADA' ? 'bg-blue-100 text-blue-800' : cot.estado === 'FACTURADA' ? 'bg-purple-100 text-purple-800' : cot.estado === 'PAGADA' ? 'bg-emerald-100 text-emerald-800' : cot.estado === 'RECHAZADA' ? 'bg-red-100 text-red-800' : 'bg-gray-100 text-gray-700'}"
+									>
+										{cot.estado === 'BORRADOR' ? 'Borrador' : cot.estado === 'ENVIADA' ? 'Enviada' : cot.estado === 'APROBADA' ? 'Aprobada' : cot.estado === 'RECHAZADA' ? 'Rechazada' : cot.estado === 'FACTURADA' ? 'Facturada' : 'Pagada'}
+									</span>
+									<p class="text-sm font-medium text-gray-900">{formatMoney(cot.total)}</p>
+									<p class="text-xs text-gray-400">{formatDate(cot.fecha)}</p>
 								</div>
 							</li>
 						{/each}
@@ -274,12 +281,11 @@
 			</section>
 
 			<section class="rounded-2xl bg-white p-6 shadow-sm">
-				<h2 class="mb-4 text-lg font-semibold text-gray-900">Top 3 clientes</h2>
+				<h2 class="mb-4 text-lg font-semibold text-gray-900">Top 3 clientes con saldo pendiente</h2>
 
 				{#if topClientes.length === 0}
 					<p class="text-gray-600">
-						Aún no hay clientes con facturación registrada. Aparecerán aquí cuando tengas
-						cotizaciones facturadas o pagadas.
+						¡Todo cobrado! No hay clientes con saldo pendiente en este momento.
 					</p>
 				{:else}
 					<ul class="space-y-3">
@@ -295,8 +301,8 @@
 										{cliente.nombre}
 										{cliente.empresa ? `— ${cliente.empresa}` : ''}
 									</p>
-									<p class="text-sm font-medium text-gray-900">
-										{formatMoney(cliente.totalFacturado)}
+									<p class="text-sm font-medium text-amber-700">
+										{formatMoney(cliente.saldoPendiente)}
 									</p>
 								</div>
 							</li>

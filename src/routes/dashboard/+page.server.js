@@ -1,14 +1,8 @@
 import { redirect } from '@sveltejs/kit';
 import { prisma } from '$lib/server/prisma.js';
 
-const ESTADOS_ACTIVOS = ['BORRADOR', 'ENVIADA', 'APROBADA', 'FACTURADA'];
-
 function nombreMes(fecha) {
 	return fecha.toLocaleDateString('es-MX', { month: 'short', year: 'numeric' }).replace('.', '');
-}
-
-function inicioMes(fecha) {
-	return new Date(fecha.getFullYear(), fecha.getMonth(), 1);
 }
 
 export const load = async ({ locals }) => {
@@ -18,17 +12,20 @@ export const load = async ({ locals }) => {
 		redirect(303, '/');
 	}
 
-	const [cotizaciones, pagos] = await Promise.all([
+	const hoy = new Date();
+	const inicioMesActual = new Date(hoy.getFullYear(), hoy.getMonth(), 1);
+	const inicioMesSiguiente = new Date(hoy.getFullYear(), hoy.getMonth() + 1, 1);
+	const inicioMesAnterior = new Date(hoy.getFullYear(), hoy.getMonth() - 1, 1);
+
+	const [cotizaciones, pagos, ultimasCotizacionesRaw] = await Promise.all([
 		prisma.cotizacion.findMany({
-			include: {
-				cliente: true,
-				pagos: true
-			}
+			include: { cliente: true, pagos: true }
 		}),
-		prisma.pago.findMany({
-			orderBy: {
-				fecha: 'asc'
-			}
+		prisma.pago.findMany({ orderBy: { fecha: 'asc' } }),
+		prisma.cotizacion.findMany({
+			orderBy: { creadoEn: 'desc' },
+			take: 5,
+			include: { cliente: true }
 		})
 	]);
 
@@ -36,7 +33,6 @@ export const load = async ({ locals }) => {
 	let totalCobrado = 0;
 	let carteraPendiente = 0;
 	let cotizacionesActivas = 0;
-
 	const cotizacionesPorEstado = {};
 
 	for (const cot of cotizaciones) {
@@ -46,11 +42,11 @@ export const load = async ({ locals }) => {
 
 		cotizacionesPorEstado[cot.estado] = (cotizacionesPorEstado[cot.estado] ?? 0) + 1;
 
-		if (cot.estado === 'FACTURADA' || cot.estado === 'PAGADA') {
+		if (cot.estado !== 'BORRADOR' && cot.creadoEn >= inicioMesActual) {
 			totalFacturado += total;
 		}
 
-		if (ESTADOS_ACTIVOS.includes(cot.estado)) {
+		if (cot.estado === 'ENVIADA' || cot.estado === 'APROBADA' || cot.estado === 'FACTURADA') {
 			cotizacionesActivas += 1;
 		}
 
@@ -60,79 +56,51 @@ export const load = async ({ locals }) => {
 	}
 
 	for (const pago of pagos) {
-		totalCobrado += Number(pago.monto);
-	}
-
-	const hoy = new Date();
-	const limiteVencimiento = new Date(hoy);
-	limiteVencimiento.setDate(hoy.getDate() + 15);
-	limiteVencimiento.setHours(23, 59, 59, 999);
-
-	const cotizacionesPorVencer = cotizaciones
-		.filter((cot) => {
-			if (cot.estado !== 'APROBADA' && cot.estado !== 'FACTURADA') return false;
-			if (!cot.vencimiento) return false;
-			const total = Number(cot.total);
-			const totalPagado = cot.pagos.reduce((sum, p) => sum + Number(p.monto), 0);
-			const saldo = total - totalPagado;
-			const venc = new Date(cot.vencimiento);
-			return saldo > 0 && venc >= hoy && venc <= limiteVencimiento;
-		})
-		.map((cot) => {
-			const total = Number(cot.total);
-			const totalPagado = cot.pagos.reduce((sum, p) => sum + Number(p.monto), 0);
-			return {
-				numero: cot.numero,
-				cliente: cot.cliente?.nombre ?? 'Cliente no disponible',
-				saldo: total - totalPagado,
-				vencimiento: cot.vencimiento
-			};
-		})
-		.sort((a, b) => new Date(a.vencimiento).getTime() - new Date(b.vencimiento).getTime())
-		.slice(0, 5);
-
-	const facturadoPorCliente = {};
-
-	for (const cot of cotizaciones) {
-		if ((cot.estado === 'FACTURADA' || cot.estado === 'PAGADA') && cot.cliente) {
-			const id = cot.cliente.id;
-			if (!facturadoPorCliente[id]) {
-				facturadoPorCliente[id] = {
-					nombre: cot.cliente.nombre,
-					empresa: cot.cliente.empresa,
-					total: 0
-				};
-			}
-			facturadoPorCliente[id].total += Number(cot.total);
+		if (pago.fecha >= inicioMesActual && pago.fecha < inicioMesSiguiente) {
+			totalCobrado += Number(pago.monto);
 		}
 	}
 
-	const topClientes = Object.values(facturadoPorCliente)
-		.filter((cliente) => cliente.total > 0)
-		.sort((a, b) => b.total - a.total)
-		.slice(0, 3)
-		.map((cliente) => ({
-			nombre: cliente.nombre,
-			empresa: cliente.empresa,
-			totalFacturado: cliente.total
-		}));
+	const saldoPorCliente = {};
 
-	const inicioMesActual = inicioMes(hoy);
-	const inicioMesAnterior = new Date(hoy.getFullYear(), hoy.getMonth() - 1, 1);
-	const inicioMesSiguiente = new Date(hoy.getFullYear(), hoy.getMonth() + 1, 1);
+	for (const cot of cotizaciones) {
+		if ((cot.estado === 'APROBADA' || cot.estado === 'FACTURADA') && cot.cliente) {
+			const total = Number(cot.total);
+			const pagado = cot.pagos.reduce((sum, p) => sum + Number(p.monto), 0);
+			const saldo = total - pagado;
+			if (saldo > 0) {
+				const id = cot.cliente.id;
+				if (!saldoPorCliente[id]) {
+					saldoPorCliente[id] = {
+						nombre: cot.cliente.nombre,
+						empresa: cot.cliente.empresa,
+						saldoPendiente: 0
+					};
+				}
+				saldoPorCliente[id].saldoPendiente += saldo;
+			}
+		}
+	}
+
+	const topClientes = Object.values(saldoPorCliente)
+		.sort((a, b) => b.saldoPendiente - a.saldoPendiente)
+		.slice(0, 3);
+
+	const ultimasCotizaciones = ultimasCotizacionesRaw.map((cot) => ({
+		id: cot.id,
+		numero: cot.numero,
+		cliente: cot.cliente?.nombre ?? '-',
+		estado: cot.estado,
+		total: Number(cot.total),
+		fecha: cot.fecha.toISOString()
+	}));
 
 	const mesActual = pagos
-		.filter((p) => {
-			const fechaPago = new Date(p.fecha);
-			return fechaPago >= inicioMesActual && fechaPago < inicioMesSiguiente;
-		})
+		.filter((p) => p.fecha >= inicioMesActual && p.fecha < inicioMesSiguiente)
 		.reduce((sum, p) => sum + Number(p.monto), 0);
 
 	const mesAnterior = pagos
-		.filter((p) => {
-			const fechaPago = new Date(p.fecha);
-			return fechaPago >= inicioMesAnterior && fechaPago < inicioMesActual;
-		})
+		.filter((p) => p.fecha >= inicioMesAnterior && p.fecha < inicioMesActual)
 		.reduce((sum, p) => sum + Number(p.monto), 0);
 
 	let porcentaje = null;
@@ -147,12 +115,7 @@ export const load = async ({ locals }) => {
 		direccion = 'sin_datos';
 	}
 
-	const tendenciaCobrado = {
-		mesActual,
-		mesAnterior,
-		porcentaje,
-		direccion
-	};
+	const tendenciaCobrado = { mesActual, mesAnterior, porcentaje, direccion };
 
 	const ingresosPorMes = [];
 
@@ -161,28 +124,17 @@ export const load = async ({ locals }) => {
 		const siguiente = new Date(fechaBase.getFullYear(), fechaBase.getMonth() + 1, 1);
 
 		const total = pagos
-			.filter((p) => {
-				const fechaPago = new Date(p.fecha);
-				return fechaPago >= fechaBase && fechaPago < siguiente;
-			})
+			.filter((p) => p.fecha >= fechaBase && p.fecha < siguiente)
 			.reduce((sum, p) => sum + Number(p.monto), 0);
 
-		ingresosPorMes.push({
-			mes: nombreMes(fechaBase),
-			total
-		});
+		ingresosPorMes.push({ mes: nombreMes(fechaBase), total });
 	}
 
 	return {
-		kpis: {
-			totalFacturado,
-			totalCobrado,
-			carteraPendiente,
-			cotizacionesActivas
-		},
+		kpis: { totalFacturado, totalCobrado, carteraPendiente, cotizacionesActivas },
 		cotizacionesPorEstado,
 		ingresosPorMes,
-		cotizacionesPorVencer,
+		ultimasCotizaciones,
 		topClientes,
 		tendenciaCobrado
 	};
