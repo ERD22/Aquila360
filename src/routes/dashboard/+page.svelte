@@ -156,7 +156,7 @@
 							/>
 						</svg>
 					</span>
-					<p class="text-sm font-medium text-gray-600">Total facturado</p>
+					<p class="text-sm font-medium text-gray-600">Facturado este mes</p>
 				</div>
 				<p class="text-2xl font-semibold text-gray-900">{formatMoney(kpis.totalFacturado)}</p>
 			</div>
@@ -173,7 +173,7 @@
 							/>
 						</svg>
 					</span>
-					<p class="text-sm font-medium text-gray-600">Total cobrado</p>
+					<p class="text-sm font-medium text-gray-600">Cobrado este mes</p>
 				</div>
 				<p class="text-2xl font-semibold text-gray-900">{formatMoney(kpis.totalCobrado)}</p>
 				{#if tendenciaCobrado.direccion === 'sin_datos' || tendenciaCobrado.porcentaje === null}
