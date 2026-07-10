@@ -189,6 +189,78 @@ export const actions = {
 		redirect(303, `/cotizaciones/${params.id}`);
 	},
 
+	reenviarCorreo: async ({ params, locals }) => {
+		const { userId } = locals.auth();
+
+		if (!userId) {
+			redirect(303, '/');
+		}
+
+		const cotizacion = await prisma.cotizacion.findUnique({
+			where: { id: params.id },
+			include: { cliente: true, conceptos: true }
+		});
+
+		if (!cotizacion) {
+			return fail(404, { error: 'Cotización no encontrada.' });
+		}
+
+		if (cotizacion.estado === 'BORRADOR') {
+			return fail(400, {
+				error: 'Primero envía la cotización para poder reenviar el correo.'
+			});
+		}
+
+		try {
+			await enviarCorreoCotizacion({ cotizacion, cliente: cotizacion.cliente });
+		} catch (emailError) {
+			console.error('Error al reenviar correo de cotización:', emailError);
+		}
+
+		await prisma.historialCot.create({
+			data: {
+				cotizacionId: params.id,
+				estadoAnterior: cotizacion.estado,
+				estadoNuevo: cotizacion.estado,
+				nota: 'Correo reenviado al cliente.'
+			}
+		});
+
+		redirect(303, `/cotizaciones/${params.id}`);
+	},
+
+	eliminarCotizacion: async ({ params, locals }) => {
+		const { userId } = locals.auth();
+
+		if (!userId) {
+			redirect(303, '/');
+		}
+
+		const cotizacion = await prisma.cotizacion.findUnique({
+			where: { id: params.id },
+			include: { pagos: true }
+		});
+
+		if (!cotizacion) {
+			return fail(404, { error: 'Cotización no encontrada.' });
+		}
+
+		if (cotizacion.pagos.length > 0) {
+			return fail(400, {
+				error: 'No se puede eliminar una cotización con pagos registrados. Elimina primero los pagos.'
+			});
+		}
+
+		await prisma.$transaction([
+			prisma.historialCot.deleteMany({ where: { cotizacionId: params.id } }),
+			prisma.pago.deleteMany({ where: { cotizacionId: params.id } }),
+			prisma.concepto.deleteMany({ where: { cotizacionId: params.id } }),
+			prisma.cotizacion.delete({ where: { id: params.id } })
+		]);
+
+		redirect(303, '/cotizaciones');
+	},
+
 	eliminarPago: async ({ params, request, locals }) => {
 		const { userId } = locals.auth();
 

@@ -246,7 +246,7 @@
 								>
 									Editar
 								</a>
-								<form method="POST" action="?/desactivar" use:enhance>
+								<form method="POST" action="?/desactivar"> 
 									<input type="hidden" name="id" value={cliente.id} />
 									<button
 										type="submit"

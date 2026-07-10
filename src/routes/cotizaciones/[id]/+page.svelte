@@ -111,6 +111,12 @@
 		</a>
 	</div>
 
+	{#if form?.error && !form?.errores}
+		<div class="mb-4 rounded-lg bg-red-100 px-4 py-3 text-sm text-red-800">
+			{form.error}
+		</div>
+	{/if}
+
 	<section class="mb-6 rounded-2xl bg-white p-6 shadow-sm">
 		<div class="flex flex-col items-start justify-between gap-4 md:flex-row md:items-center">
 			<div>
@@ -133,6 +139,15 @@
 					>
 						Editar
 					</a>
+				{:else}
+					<form method="POST" action="?/reenviarCorreo">
+						<button
+							type="submit"
+							class="rounded-lg border border-gray-300 px-4 py-1.5 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
+						>
+							Reenviar correo
+						</button>
+					</form>
 				{/if}
 			</div>
 		</div>
@@ -397,7 +412,7 @@
 		</section>
 	{/if}
 
-	<section class="rounded-2xl bg-white p-6 shadow-sm">
+	<section class="mb-6 rounded-2xl bg-white p-6 shadow-sm">
 		<h2 class="mb-4 text-lg font-medium text-gray-900">Historial de cambios</h2>
 
 		{#if cotizacion.historial.length === 0}
@@ -425,5 +440,25 @@
 				{/each}
 			</ul>
 		{/if}
+	</section>
+
+	<section class="rounded-2xl border border-red-200 bg-white p-6">
+		<h2 class="mb-1 text-lg font-medium text-red-700">Zona de peligro</h2>
+		<p class="mb-4 text-sm text-gray-600">
+			Esta acción es permanente y no se puede deshacer. Solo se puede eliminar una cotización
+			que no tenga pagos registrados.
+		</p>
+		<form method="POST" action="?/eliminarCotizacion">
+			<button
+				type="submit"
+				onclick={(e) => {
+					if (!confirm('¿Eliminar esta cotización? Esta acción no se puede deshacer.'))
+						e.preventDefault();
+				}}
+				class="rounded-lg border border-red-300 px-5 py-2.5 text-sm font-medium text-red-700 transition hover:bg-red-50"
+			>
+				Eliminar cotización
+			</button>
+		</form>
 	</section>
 </main>
