@@ -12,9 +12,11 @@ export const load = async ({ url, locals }) => {
 
 	const buscar = String(url.searchParams.get('buscar') ?? '').trim();
 	const pagina = Math.max(1, parseInt(url.searchParams.get('pagina') ?? '1', 10) || 1);
+	const inactivos = url.searchParams.get('inactivos');
+	const mostrandoInactivos = inactivos === '1';
 
 	const where = {
-		activo: true,
+		activo: mostrandoInactivos ? false : true,
 		...(buscar
 			? {
 					OR: [
@@ -38,7 +40,7 @@ export const load = async ({ url, locals }) => {
 
 	const totalPaginas = Math.max(1, Math.ceil(total / POR_PAGINA));
 
-	return { clientes, buscar, pagina, totalPaginas, total };
+	return { clientes, buscar, pagina, totalPaginas, total, mostrandoInactivos };
 };
 
 export const actions = {
@@ -105,6 +107,28 @@ export const actions = {
 			data: { activo: false }
 		});
 
-		return { exito: true };
+		redirect(303, '/clientes');
+	},
+
+	reactivar: async ({ request, locals }) => {
+		const { userId } = locals.auth();
+
+		if (!userId) {
+			redirect(303, '/');
+		}
+
+		const formData = await request.formData();
+		const id = String(formData.get('id') ?? '').trim();
+
+		if (!id) {
+			return fail(400, { error: 'Falta el id del cliente.' });
+		}
+
+		await prisma.cliente.update({
+			where: { id },
+			data: { activo: true }
+		});
+
+		redirect(303, '/clientes?inactivos=1');
 	}
 };

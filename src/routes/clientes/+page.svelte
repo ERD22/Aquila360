@@ -141,31 +141,58 @@
 	</section>
 
 	<section class="rounded-2xl bg-white p-6 shadow-sm">
-		<div class="mb-4 flex flex-col items-start justify-between gap-3 sm:flex-row sm:items-center">
-			<h2 class="text-lg font-medium text-gray-900">Clientes activos</h2>
-			<form method="GET" class="flex items-center gap-2">
-				<input
-					name="buscar"
-					bind:value={busqueda}
-					type="text"
-					placeholder="Buscar por nombre, empresa o RFC…"
-					class="rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 focus:border-gray-900 focus:outline-none"
-				/>
-				<button
-					type="submit"
-					class="rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-gray-800"
+		<div class="mb-4 flex flex-col gap-3">
+			<div class="flex items-center gap-2 border-b border-gray-200 pb-3">
+				<a
+					href="/clientes"
+					class="rounded-lg px-4 py-1.5 text-sm font-medium transition
+						{!data.mostrandoInactivos
+							? 'bg-gray-900 text-white'
+							: 'text-gray-600 hover:bg-gray-100'}"
 				>
-					Buscar
-				</button>
-				{#if data.buscar}
-					<a
-						href="/clientes"
-						class="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
+					Activos
+				</a>
+				<a
+					href="/clientes?inactivos=1"
+					class="rounded-lg px-4 py-1.5 text-sm font-medium transition
+						{data.mostrandoInactivos
+							? 'bg-gray-900 text-white'
+							: 'text-gray-600 hover:bg-gray-100'}"
+				>
+					Inactivos
+				</a>
+			</div>
+			<div class="flex flex-col items-start justify-between gap-3 sm:flex-row sm:items-center">
+				<h2 class="text-lg font-medium text-gray-900">
+					{data.mostrandoInactivos ? 'Clientes inactivos' : 'Clientes activos'}
+				</h2>
+				<form method="GET" class="flex items-center gap-2">
+					{#if data.mostrandoInactivos}
+						<input type="hidden" name="inactivos" value="1" />
+					{/if}
+					<input
+						name="buscar"
+						bind:value={busqueda}
+						type="text"
+						placeholder="Buscar por nombre, empresa o RFC…"
+						class="rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 focus:border-gray-900 focus:outline-none"
+					/>
+					<button
+						type="submit"
+						class="rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-gray-800"
 					>
-						Limpiar
-					</a>
-				{/if}
-			</form>
+						Buscar
+					</button>
+					{#if data.buscar}
+						<a
+							href={data.mostrandoInactivos ? '/clientes?inactivos=1' : '/clientes'}
+							class="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
+						>
+							Limpiar
+						</a>
+					{/if}
+				</form>
+			</div>
 		</div>
 
 		{#if clientesFiltrados.length === 0}
@@ -173,6 +200,8 @@
 				<p class="text-gray-600">
 					No encontramos clientes con ese criterio. Prueba con otro término.
 				</p>
+			{:else if data.mostrandoInactivos}
+				<p class="text-gray-600">No hay clientes inactivos.</p>
 			{:else}
 				<p class="text-gray-600">
 					Aún no hay clientes registrados. Agrega el primero usando el formulario de arriba.
@@ -208,26 +237,38 @@
 								<td class="py-3 pr-4">{cliente.telefono ?? '-'}</td>
 								<td class="py-3 pr-4">{cliente.correo}</td>
 								<td class="py-3 pr-4">{formatDate(cliente.creadoEn)}</td>
-								<td class="py-3 pr-4">
-									<div class="flex items-center gap-3">
-										<a
-											href="/clientes/{cliente.id}/editar"
-											class="text-sm font-medium text-gray-900 transition hover:text-gray-600"
-										>
-											Editar
-										</a>
-										<form method="POST" action="?/desactivar" use:enhance>
-											<input type="hidden" name="id" value={cliente.id} />
-											<button
-												type="submit"
-												class="text-sm font-medium text-red-600 transition hover:text-red-800"
-											>
-												Desactivar
-											</button>
-										</form>
-									</div>
-								</td>
-							</tr>
+					<td class="py-3 pr-4">
+						<div class="flex items-center gap-3">
+							{#if !data.mostrandoInactivos}
+								<a
+									href="/clientes/{cliente.id}/editar"
+									class="text-sm font-medium text-gray-900 transition hover:text-gray-600"
+								>
+									Editar
+								</a>
+								<form method="POST" action="?/desactivar" use:enhance>
+									<input type="hidden" name="id" value={cliente.id} />
+									<button
+										type="submit"
+										class="text-sm font-medium text-red-600 transition hover:text-red-800"
+									>
+										Desactivar
+									</button>
+								</form>
+							{:else}
+								<form method="POST" action="?/reactivar">
+									<input type="hidden" name="id" value={cliente.id} />
+									<button
+										type="submit"
+										class="text-sm font-medium text-green-700 transition hover:text-green-900"
+									>
+										Reactivar
+									</button>
+								</form>
+							{/if}
+						</div>
+					</td>
+				</tr>
 						{/each}
 					</tbody>
 				</table>
