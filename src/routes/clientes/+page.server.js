@@ -130,5 +130,40 @@ export const actions = {
 		});
 
 		redirect(303, '/clientes?inactivos=1');
+	},
+
+	eliminar: async ({ request, locals }) => {
+		const { userId } = locals.auth();
+
+		if (!userId) {
+			redirect(303, '/');
+		}
+
+		const formData = await request.formData();
+		const id = String(formData.get('id') ?? '').trim();
+		const origen = String(formData.get('origen') ?? '').trim();
+
+		if (!id) {
+			return fail(400, { error: 'Falta el id del cliente.' });
+		}
+
+		const cliente = await prisma.cliente.findUnique({
+			where: { id },
+			include: { cotizaciones: { select: { id: true } } }
+		});
+
+		if (!cliente) {
+			return fail(404, { error: 'Cliente no encontrado.' });
+		}
+
+		if (cliente.cotizaciones.length > 0) {
+			return fail(400, {
+				error: 'No se puede eliminar un cliente con cotizaciones registradas. Desactívalo en su lugar.'
+			});
+		}
+
+		await prisma.cliente.delete({ where: { id } });
+
+		redirect(303, origen === 'inactivos' ? '/clientes?inactivos=1' : '/clientes');
 	}
 };

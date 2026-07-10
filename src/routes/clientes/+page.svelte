@@ -195,6 +195,12 @@
 			</div>
 		</div>
 
+		{#if form?.error}
+			<div class="mb-4 rounded-lg bg-red-100 px-4 py-3 text-sm text-red-800">
+				{form.error}
+			</div>
+		{/if}
+
 		{#if clientesFiltrados.length === 0}
 			{#if busqueda.trim()}
 				<p class="text-gray-600">
@@ -265,7 +271,19 @@
 										Reactivar
 									</button>
 								</form>
+					
 							{/if}
+							<form method="POST" action="?/eliminar">
+								<input type="hidden" name="id" value={cliente.id} />
+								<input type="hidden" name="origen" value={data.mostrandoInactivos ? 'inactivos' : 'activos'} />
+								<button
+									type="submit"
+									onclick={(e) => { if (!confirm('¿Eliminar este cliente definitivamente? Esta acción no se puede deshacer.')) e.preventDefault(); }}
+									class="text-sm font-medium text-red-600 transition hover:text-red-800"
+								>
+									Eliminar
+								</button>
+							</form>
 						</div>
 					</td>
 				</tr>
