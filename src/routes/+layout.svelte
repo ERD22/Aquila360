@@ -2,6 +2,7 @@
 	import './layout.css';
 	import favicon from '$lib/assets/favicon.svg';
 	import { ClerkProvider, Show, UserButton } from 'svelte-clerk';
+	import AiAssistant from '$lib/components/AiAssistant.svelte';
 
 	let { children } = $props();
 
@@ -76,4 +77,7 @@
 	</Show>
 
 	{@render children()}
+	<Show when="signed-in">
+		<AiAssistant />
+	</Show>
 </ClerkProvider>
