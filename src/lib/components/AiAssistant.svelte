@@ -8,6 +8,11 @@
 	let cargando = $state(false);
 	let error = $state('');
 
+	let videoUrl = $state(null);
+	let conversationId = $state(null);
+	let cargandoVideo = $state(false);
+	let errorVideo = $state('');
+
 	const sugerencias = [
 		'Qué puedo hacer aquí',
 		'Cómo crear un cliente',
@@ -18,7 +23,47 @@
 	const ruta = $derived($page.url.pathname);
 
 	function alternar() {
+		if (conversationId) {
+			terminarVideo();
+		}
 		abierto = !abierto;
+	}
+
+	function iniciarVideo() {
+		if (cargandoVideo || videoUrl) return;
+
+		cargandoVideo = true;
+		errorVideo = '';
+
+		fetch('/api/tavus', { method: 'POST' })
+			.then(async (res) => {
+				const json = await res.json();
+				if (!res.ok) throw new Error(json.error || json.message || 'No se pudo iniciar el asistente en video');
+				videoUrl = json.conversationUrl;
+				conversationId = json.conversationId;
+			})
+			.catch((e) => {
+				errorVideo = e.message;
+			})
+			.finally(() => {
+				cargandoVideo = false;
+			});
+	}
+
+	function terminarVideo() {
+		if (!conversationId) return;
+
+		fetch('/api/tavus', {
+			method: 'DELETE',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify({ conversationId })
+		})
+			.catch(() => {})
+			.finally(() => {
+				videoUrl = null;
+				conversationId = null;
+				errorVideo = '';
+			});
 	}
 
 	function enviar(texto = mensaje) {
@@ -82,71 +127,97 @@
 				</svg>
 				<span class="font-semibold">Aquila Asistente</span>
 			</div>
-			<button onclick={alternar} class="rounded p-1 hover:bg-amber-600" aria-label="Cerrar asistente">
-				<svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-					<line x1="18" y1="6" x2="6" y2="18" />
-					<line x1="6" y1="6" x2="18" y2="18" />
-				</svg>
-			</button>
-		</div>
-
-		<div class="flex h-80 flex-col gap-3 overflow-y-auto p-4">
-			{#if mensajes.length === 0}
-				<p class="text-sm text-gray-600">
-					Hola, soy tu asistente en Aquila360. Pregúntame lo que necesites sobre la app o elige una sugerencia.
-				</p>
-			{/if}
-
-			{#each mensajes as m (m)}
-				<div class="flex flex-col gap-1">
-					<div
-						class="max-w-[85%] rounded-2xl px-4 py-2 text-sm {m.role === 'user'
-							? 'self-end rounded-br-none bg-gray-900 text-white'
-							: 'self-start rounded-bl-none bg-gray-100 text-gray-900'}"
-					>
-						{m.content}
-					</div>
-				</div>
-			{/each}
-
-			{#if error}
-				<p class="rounded-lg bg-red-100 px-3 py-2 text-sm text-red-800">{error}</p>
-			{/if}
-
-			{#if cargando}
-				<div class="self-start rounded-2xl rounded-bl-none bg-gray-100 px-4 py-2 text-sm text-gray-600">
-					Escribiendo…
-				</div>
-			{/if}
-		</div>
-
-		<div class="border-t border-gray-100 p-3">
-			<div class="mb-2 flex flex-wrap gap-2">
-				{#each sugerencias as sugerencia}
-					<button
-						onclick={() => sugerir(sugerencia)}
-						class="rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-xs text-amber-700 transition hover:bg-amber-100"
-					>
-						{sugerencia}
-					</button>
-				{/each}
-			</div>
-			<div class="flex gap-2">
-				<input
-					type="text"
-					bind:value={mensaje}
-					onkeydown={alPresionarTecla}
-					placeholder="Escribe tu pregunta…"
-					class="flex-1 rounded-full border border-gray-300 px-4 py-2 text-sm text-gray-900 focus:border-amber-500 focus:outline-none"
-				/>
-				<button
-					onclick={() => enviar()}
-					disabled={cargando || !mensaje.trim()}
-					class="rounded-full bg-amber-500 px-4 py-2 text-sm font-medium text-white transition hover:bg-amber-600 disabled:opacity-50"
-				>
-					Enviar
+			<div class="flex items-center gap-2">
+				<button onclick={iniciarVideo} disabled={cargandoVideo} class="rounded p-1 hover:bg-amber-600 disabled:opacity-50" aria-label="Hablar con el asistente en video">
+					<svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+						<polygon points="23 7 16 12 23 17 23 7" />
+						<rect x="1" y="5" width="15" height="14" rx="2" ry="2" />
+					</svg>
+				</button>
+				<button onclick={alternar} class="rounded p-1 hover:bg-amber-600" aria-label="Cerrar asistente">
+					<svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+						<line x1="18" y1="6" x2="6" y2="18" />
+						<line x1="6" y1="6" x2="18" y2="18" />
+					</svg>
 				</button>
 			</div>
+		</div>
+
+		{#if videoUrl}
+			<iframe
+				src={videoUrl}
+				allow="camera; microphone; fullscreen"
+				class="h-80 w-full"
+				title="Videollamada con el asistente"
+			></iframe>
+		{:else}
+			<div class="flex h-80 flex-col gap-3 overflow-y-auto p-4">
+				{#if mensajes.length === 0}
+					<p class="text-sm text-gray-600">
+						Hola, soy tu asistente en Aquila360. Pregúntame lo que necesites sobre la app o elige una sugerencia.
+					</p>
+				{/if}
+
+				{#each mensajes as m (m)}
+					<div class="flex flex-col gap-1">
+						<div
+							class="max-w-[85%] rounded-2xl px-4 py-2 text-sm {m.role === 'user'
+								? 'self-end rounded-br-none bg-gray-900 text-white'
+								: 'self-start rounded-bl-none bg-gray-100 text-gray-900'}"
+						>
+							{m.content}
+						</div>
+					</div>
+				{/each}
+
+				{#if error}
+					<p class="rounded-lg bg-red-100 px-3 py-2 text-sm text-red-800">{error}</p>
+				{/if}
+
+				{#if cargando}
+					<div class="self-start rounded-2xl rounded-bl-none bg-gray-100 px-4 py-2 text-sm text-gray-600">
+						Escribiendo…
+					</div>
+				{/if}
+			</div>
+		{/if}
+
+		<div class="border-t border-gray-100 p-3">
+			{#if videoUrl}
+				<button
+					onclick={terminarVideo}
+					class="w-full rounded-full bg-red-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-red-700"
+				>
+					Terminar videollamada
+				</button>
+			{:else}
+				<div class="mb-2 flex flex-wrap gap-2">
+					{#each sugerencias as sugerencia}
+						<button
+							onclick={() => sugerir(sugerencia)}
+							class="rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-xs text-amber-700 transition hover:bg-amber-100"
+						>
+							{sugerencia}
+						</button>
+					{/each}
+				</div>
+				<div class="flex gap-2">
+					<input
+						type="text"
+						bind:value={mensaje}
+						onkeydown={alPresionarTecla}
+						placeholder="Escribe tu pregunta…"
+						class="flex-1 rounded-full border border-gray-300 px-4 py-2 text-sm text-gray-900 focus:border-amber-500 focus:outline-none"
+					/>
+					<button
+						onclick={() => enviar()}
+						disabled={cargando || !mensaje.trim()}
+						class="rounded-full bg-amber-500 px-4 py-2 text-sm font-medium text-white transition hover:bg-amber-600 disabled:opacity-50"
+					>
+						Enviar
+					</button>
+				</div>
+			{/if}
 		</div>
 	</div>
 {/if}
