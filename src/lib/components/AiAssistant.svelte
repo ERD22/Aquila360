@@ -116,7 +116,7 @@
 
 {#if abierto}
 	<div
-		class="fixed bottom-20 right-4 z-50 flex w-96 flex-col rounded-2xl border border-gray-200 bg-white shadow-2xl"
+		class="fixed bottom-20 right-4 z-50 flex w-[calc(100vw-2rem)] sm:w-96 flex-col rounded-2xl border border-gray-200 bg-white shadow-2xl"
 	>
 		<div class="flex items-center justify-between rounded-t-2xl bg-amber-500 px-4 py-3 text-white">
 			<div class="flex items-center gap-2">
@@ -147,7 +147,7 @@
 			<iframe
 				src={videoUrl}
 				allow="camera; microphone; fullscreen"
-				class="h-80 w-full"
+				class="h-64 w-full sm:h-80"
 				title="Videollamada con el asistente"
 			></iframe>
 		{:else}
